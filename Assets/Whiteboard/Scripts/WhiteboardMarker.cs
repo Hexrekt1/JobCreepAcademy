@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.Collections;
 using UnityEngine;
 
 public class WhiteboardMarker : MonoBehaviour
@@ -19,16 +17,25 @@ public class WhiteboardMarker : MonoBehaviour
     private bool _touchedLastFrame;
     private Quaternion _lastTouchRot;
     
+    private bool canDraw = true; // Flag to check if drawing is allowed
+
     void Start()
     {
         _renderer = _tip.GetComponent<Renderer>();
-        _colors = Enumerable.Repeat(_renderer.material.color, _penSize * _penSize).ToArray();
+        _colors = new Color[_penSize * _penSize];
+        for (int i = 0; i < _colors.Length; i++)
+        {
+            _colors[i] = _renderer.material.color;
+        }
         _tipHeight = _tip.localScale.y;
     }
 
     void Update()
     {
-        Draw();
+        if (canDraw) // Only allow drawing if canDraw is true
+        {
+            Draw();
+        }
     }
 
     private void Draw()
@@ -68,11 +75,22 @@ public class WhiteboardMarker : MonoBehaviour
                 _lastTouchPos = new Vector2(x, y);
                 _lastTouchRot = transform.rotation;
                 _touchedLastFrame = true;
-                return;
             }
         }
 
         _whiteboard = null;
         _touchedLastFrame = false;
+    }
+
+    // Method to stop drawing
+    public void DisableDrawing()
+    {
+        canDraw = false;
+    }
+
+    // Method to enable drawing
+    public void EnableDrawing()
+    {
+        canDraw = true;
     }
 }
