@@ -1,45 +1,40 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class WhiteboardMarker : MonoBehaviour
 {
-    [SerializeField] private Transform _tip;
-    [SerializeField] private int _penSize = 5;
+    [SerializeField] private Transform _tip; // Tip of the marker
+    [SerializeField] private int _penSize = 5; // Size of the marker drawing area
 
     private Renderer _renderer;
-    private Color[] _colors;
+    private Color[] _colors; // Color buffer for drawing
     private float _tipHeight;
 
-    private RaycastHit _touch;
-    private Whiteboard _whiteboard;
+    private RaycastHit _touch; // Raycast hit for detecting the whiteboard
+    private Whiteboard _whiteboard; // Reference to the whiteboard being drawn on
     private Vector2 _touchPos, _lastTouchPos;
     private bool _touchedLastFrame;
     private Quaternion _lastTouchRot;
-    
-    private bool canDraw = true; // Flag to check if drawing is allowed
+
+    [SerializeField] private Color _markerColor = Color.black; // Current marker color
 
     void Start()
     {
         _renderer = _tip.GetComponent<Renderer>();
-        _colors = new Color[_penSize * _penSize];
-        for (int i = 0; i < _colors.Length; i++)
-        {
-            _colors[i] = _renderer.material.color;
-        }
+        UpdateColor(_markerColor); // Initialize with default color
         _tipHeight = _tip.localScale.y;
     }
 
     void Update()
     {
-        if (canDraw) // Only allow drawing if canDraw is true
-        {
-            Draw();
-        }
+        Draw();
     }
 
     private void Draw()
     {
+        // Cast a ray from the marker tip to detect the whiteboard
         if (Physics.Raycast(_tip.position, transform.up, out _touch, _tipHeight))
         {
             if (_touch.transform.CompareTag("Whiteboard"))
@@ -68,13 +63,14 @@ public class WhiteboardMarker : MonoBehaviour
                     }
 
                     transform.rotation = _lastTouchRot;
-                    
+
                     _whiteboard.texture.Apply();
                 }
 
                 _lastTouchPos = new Vector2(x, y);
                 _lastTouchRot = transform.rotation;
                 _touchedLastFrame = true;
+                return;
             }
         }
 
@@ -82,15 +78,34 @@ public class WhiteboardMarker : MonoBehaviour
         _touchedLastFrame = false;
     }
 
-    // Method to stop drawing
-    public void DisableDrawing()
+    /// <summary>
+    /// Updates the marker's drawing color.
+    /// </summary>
+    /// <param name="newColor">The new color to set for the marker.</param>
+    public void UpdateColor(Color newColor)
     {
-        canDraw = false;
+        _markerColor = newColor;
+        _renderer.material.color = _markerColor; // Change the tip's visual color
+
+        // Update the color buffer used for drawing
+        _colors = Enumerable.Repeat(_markerColor, _penSize * _penSize).ToArray();
     }
 
-    // Method to enable drawing
-    public void EnableDrawing()
+    /// <summary>
+    /// Detects collision with objects and changes the marker's color.
+    /// </summary>
+    /// <param name="other">The collider of the object the marker collides with.</param>
+    private void OnTriggerEnter(Collider other)
     {
-        canDraw = true;
+        // Only change color if the collided object has the "ColorChanger" tag
+        if (other.CompareTag("ColorChanger"))
+        {
+            Renderer collidedRenderer = other.GetComponent<Renderer>();
+            if (collidedRenderer != null)
+            {
+                Color newColor = collidedRenderer.material.color; // Get the object's color
+                UpdateColor(newColor); // Update the marker's color
+            }
+        }
     }
 }
