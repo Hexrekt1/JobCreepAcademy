@@ -52,5 +52,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "JobCreepAcademy-main.sln"
+    "dotnet.defaultSolution": "12JobCreepAcademy-main.sln"
 }

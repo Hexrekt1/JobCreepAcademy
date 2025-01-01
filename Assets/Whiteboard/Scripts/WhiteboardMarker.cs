@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
 using UnityEngine;
 
 public class WhiteboardMarker : MonoBehaviour
@@ -18,7 +17,7 @@ public class WhiteboardMarker : MonoBehaviour
     private Vector2 _touchPos, _lastTouchPos;
     private bool _touchedLastFrame;
     private Quaternion _lastTouchRot;
-    
+
     void Start()
     {
         _renderer = _tip.GetComponent<Renderer>();
@@ -61,7 +60,6 @@ public class WhiteboardMarker : MonoBehaviour
                     }
 
                     transform.rotation = _lastTouchRot;
-                    
                     _whiteboard.texture.Apply();
                 }
 
@@ -74,5 +72,42 @@ public class WhiteboardMarker : MonoBehaviour
 
         _whiteboard = null;
         _touchedLastFrame = false;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log($"Collided with: {collision.gameObject.name}");
+
+        if (collision.gameObject.CompareTag("ColorChanger"))
+        {
+            Debug.Log("Collided with a ColorChanger object.");
+
+            Renderer collidedRenderer = collision.gameObject.GetComponent<Renderer>();
+            if (collidedRenderer != null)
+            {
+                Debug.Log("Renderer found.");
+                
+                if (collidedRenderer.material.HasProperty("_Color"))
+                {
+                    Debug.Log("Material has a _Color property.");
+
+                    Color newColor = collidedRenderer.material.color;
+                    Debug.Log($"Changing marker color to: {newColor}");
+
+                    _renderer.material.color = newColor;
+
+                    // Update the color array for drawing
+                    _colors = Enumerable.Repeat(newColor, _penSize * _penSize).ToArray();
+                }
+                else
+                {
+                    Debug.LogError("Material does not have a _Color property.");
+                }
+            }
+            else
+            {
+                Debug.LogError("Renderer not found on the collided object.");
+            }
+        }
     }
 }

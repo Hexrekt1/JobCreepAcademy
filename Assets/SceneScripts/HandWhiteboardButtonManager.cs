@@ -86,7 +86,7 @@ public class WhiteboardButtonManager : MonoBehaviour
             if (currentStep < drawingObjects.Length)
             {
                 var currentDrawingObject = drawingObjects[currentStep];
-                StartCoroutine(MoveAndDeactivate(currentDrawingObject, drawingInactivePosition));
+                StartCoroutine(MoveAndDeactivate(currentDrawingObject, drawingInactivePosition, -90));
             }
 
             // Increment to the next step
@@ -103,32 +103,37 @@ public class WhiteboardButtonManager : MonoBehaviour
             {
                 var nextDrawingObject = drawingObjects[currentStep];
                 nextDrawingObject.GetComponent<MeshRenderer>().enabled = true;
-                StartCoroutine(MoveObject(nextDrawingObject, drawingActivePosition));
+                StartCoroutine(MoveObject(nextDrawingObject, drawingActivePosition, -90));
             }
         }
         else if (currentStep == whiteboards.Length - 1)
         {
-            // Teleport XR Rig to the final position
+            // Teleport XR Rig to the final position (no rotation)
             xrRig.position = xrRigFinalPosition.position;
             xrRig.rotation = xrRigFinalPosition.rotation;
             Debug.Log("Teleported XR Rig to final position!");
         }
     }
 
-    private IEnumerator MoveAndDeactivate(GameObject obj, Vector3 targetPosition)
+    private IEnumerator MoveAndDeactivate(GameObject obj, Vector3 targetPosition, float rotationOffset)
     {
-        yield return MoveObject(obj, targetPosition);
+        yield return MoveObject(obj, targetPosition, rotationOffset);
         obj.GetComponent<MeshRenderer>().enabled = false; // Disable renderer after moving
     }
 
-    private IEnumerator MoveObject(GameObject obj, Vector3 targetPosition)
+    private IEnumerator MoveObject(GameObject obj, Vector3 targetPosition, float rotationOffset)
     {
-        while (Vector3.Distance(obj.transform.position, targetPosition) > 0.01f)
+        Vector3 initialRotation = obj.transform.rotation.eulerAngles;
+        Quaternion targetRotation = Quaternion.Euler(initialRotation.x, initialRotation.y + rotationOffset, initialRotation.z);
+
+        while (Vector3.Distance(obj.transform.position, targetPosition) > 0.01f || Quaternion.Angle(obj.transform.rotation, targetRotation) > 0.1f)
         {
             obj.transform.position = Vector3.MoveTowards(obj.transform.position, targetPosition, movementSpeed * Time.deltaTime);
+            obj.transform.rotation = Quaternion.RotateTowards(obj.transform.rotation, targetRotation, movementSpeed * 10 * Time.deltaTime);
             yield return null;
         }
         obj.transform.position = targetPosition; // Snap to exact position
+        obj.transform.rotation = targetRotation; // Snap to exact rotation
     }
 
     private IEnumerator ButtonCooldown()
