@@ -1,29 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 public class WhiteboardMarker : MonoBehaviour
 {
-    [SerializeField] private Transform _tip; // Tip of the marker
-    [SerializeField] private int _penSize = 5; // Size of the marker drawing area
+    [SerializeField] private Transform _tip;
+    [SerializeField] private int _penSize = 5;
 
     private Renderer _renderer;
-    private Color[] _colors; // Color buffer for drawing
+    private Color[] _colors;
     private float _tipHeight;
 
-    private RaycastHit _touch; // Raycast hit for detecting the whiteboard
-    private Whiteboard _whiteboard; // Reference to the whiteboard being drawn on
+    private RaycastHit _touch;
+    private Whiteboard _whiteboard;
     private Vector2 _touchPos, _lastTouchPos;
     private bool _touchedLastFrame;
     private Quaternion _lastTouchRot;
-
-    [SerializeField] private Color _markerColor = Color.black; // Current marker color
-
+    
     void Start()
     {
         _renderer = _tip.GetComponent<Renderer>();
-        UpdateColor(_markerColor); // Initialize with default color
+        _colors = Enumerable.Repeat(_renderer.material.color, _penSize * _penSize).ToArray();
         _tipHeight = _tip.localScale.y;
     }
 
@@ -34,7 +33,6 @@ public class WhiteboardMarker : MonoBehaviour
 
     private void Draw()
     {
-        // Cast a ray from the marker tip to detect the whiteboard
         if (Physics.Raycast(_tip.position, transform.up, out _touch, _tipHeight))
         {
             if (_touch.transform.CompareTag("Whiteboard"))
@@ -63,7 +61,7 @@ public class WhiteboardMarker : MonoBehaviour
                     }
 
                     transform.rotation = _lastTouchRot;
-
+                    
                     _whiteboard.texture.Apply();
                 }
 
@@ -76,36 +74,5 @@ public class WhiteboardMarker : MonoBehaviour
 
         _whiteboard = null;
         _touchedLastFrame = false;
-    }
-
-    /// <summary>
-    /// Updates the marker's drawing color.
-    /// </summary>
-    /// <param name="newColor">The new color to set for the marker.</param>
-    public void UpdateColor(Color newColor)
-    {
-        _markerColor = newColor;
-        _renderer.material.color = _markerColor; // Change the tip's visual color
-
-        // Update the color buffer used for drawing
-        _colors = Enumerable.Repeat(_markerColor, _penSize * _penSize).ToArray();
-    }
-
-    /// <summary>
-    /// Detects collision with objects and changes the marker's color.
-    /// </summary>
-    /// <param name="other">The collider of the object the marker collides with.</param>
-    private void OnTriggerEnter(Collider other)
-    {
-        // Only change color if the collided object has the "ColorChanger" tag
-        if (other.CompareTag("ColorChanger"))
-        {
-            Renderer collidedRenderer = other.GetComponent<Renderer>();
-            if (collidedRenderer != null)
-            {
-                Color newColor = collidedRenderer.material.color; // Get the object's color
-                UpdateColor(newColor); // Update the marker's color
-            }
-        }
     }
 }
